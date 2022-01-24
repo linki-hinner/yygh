@@ -1,8 +1,10 @@
 package com.lin.yygh.vo.cmn;
 
 import com.alibaba.excel.annotation.ExcelProperty;
-import com.alibaba.excel.metadata.BaseRowModel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * <p>
@@ -12,6 +14,9 @@ import lombok.Data;
  * @author qy
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DictEeVo {
 
 	@ExcelProperty(value = "id" ,index = 0)
