@@ -8,9 +8,11 @@ import com.lin.yygh.cmn.mapper.DictMapper;
 import com.lin.yygh.cmn.service.DictService;
 import com.lin.yygh.model.cmn.Dict;
 import com.lin.yygh.vo.cmn.DictEeVo;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +23,13 @@ import java.util.List;
 
 @Service
 public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements DictService {
+    private DictService dictService;
+
+    @Autowired
+    public void setDictService(DictService dictService) {
+        this.dictService = dictService;
+    }
+
     @Override
     @Cacheable(value = "dict", keyGenerator = "keyGenerator")
     public List<Dict> findChildData(Long id) {
@@ -73,6 +82,37 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
             e.printStackTrace();
             return false;
         }
+    }
+
+    @Override
+    public String getDictName(String dictCode, String value) {
+        Dict dict;
+        if (StringUtils.isEmpty(dictCode)) {
+            QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("value", value);
+            dict = baseMapper.selectOne(queryWrapper);
+        } else {
+            QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
+            queryWrapper.eq("dict_code", dictCode);
+            Dict parentDict = baseMapper.selectOne(queryWrapper);
+            if (parentDict == null) {
+                return null;
+            }
+            Long parent_id = parentDict.getId();
+            queryWrapper.clear();
+            queryWrapper.eq("value", value);
+            queryWrapper.eq("parent_id", parent_id);
+            dict = baseMapper.selectOne(queryWrapper);
+        }
+        return dict == null ? null : dict.getName();
+    }
+
+    @Override
+    public List<Dict> findByDictCode(String dictCode) {
+        QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("dict_code", dictCode);
+        Dict dict = baseMapper.selectOne(queryWrapper);
+        return dictService.findChildData(dict.getId());
     }
 
     private boolean hasChildren(Long id) {

@@ -7,8 +7,10 @@ import com.lin.yygh.common.util.MD5;
 import com.lin.yygh.hosp.service.HospitalSetService;
 import com.lin.yygh.model.hosp.HospitalSet;
 import com.lin.yygh.vo.hosp.HospitalQueryVo;
+import com.lin.yygh.vo.order.SignInfoVo;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +21,6 @@ import java.util.Random;
 @Api(tags = "医院设置管理")
 @RestController
 @RequiredArgsConstructor
-@CrossOrigin
 public class HospitalSetController {
     private final HospitalSetService hospitalSetService;
     private final Random random = new Random();
@@ -103,12 +104,20 @@ public class HospitalSetController {
     }
 
     @ApiOperation("发送签名密钥")
-    @PutMapping("sendKey/{id}")
+    @PutMapping("/admin/hosp/hospitalSet/sendKey/{id}")
     public Result<?> sendKey(@PathVariable Long id) {
         HospitalSet byId = hospitalSetService.getById(id);
         String signKey = byId.getSignKey();
         String hoscode = byId.getHoscode();
         //TODO 发送短信
         return Result.ok();
+    }
+
+    @ApiOperation(value = "获取医院签名信息")
+    @GetMapping("/admin/hosp/hospitalSet/inner/getSignInfoVo/{hoscode}")
+    public SignInfoVo getSignInfoVo(
+            @ApiParam(name = "hoscode", value = "医院code", required = true)
+            @PathVariable("hoscode") String hoscode) {
+        return hospitalSetService.getSignInfoVo(hoscode);
     }
 }

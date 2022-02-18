@@ -13,6 +13,7 @@
     <modules>
         <module>common_util</module>
         <module>service_util</module>
+        <module>rabbit_util</module>
     </modules>
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -24,6 +25,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <scope>provided </scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
         </dependency>
 
         <!--mybatis-plus-->
@@ -47,6 +53,11 @@
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger-ui</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
         </dependency>
     </dependencies>
 </project>

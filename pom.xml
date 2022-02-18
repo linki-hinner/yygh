@@ -6,7 +6,10 @@
         <module>common</module>
         <module>model</module>
         <module>service</module>
-        <module>service_hosp</module>
+        <module>service_client</module>
+        <module>service-user-client</module>
+        <module>com.lin.yygh.hosp.client</module>
+        <module>rabbit-util</module>
     </modules>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -33,8 +36,11 @@
         <httpclient.version>4.5.1</httpclient.version>
         <easyexcel.version>2.2.0-beta2</easyexcel.version>
         <aliyun.version>4.1.1</aliyun.version>
-        <oss.version>3.9.1</oss.version>
+        <oss.version>3.10.2</oss.version>
         <jodatime.version>2.10.1</jodatime.version>
+        <guava.version>28.2-jre</guava.version>
+        <commons-pool2.version>2.10.0</commons-pool2.version>
+        <apollo.version>1.9.1</apollo.version>
     </properties>
 
     <!--配置dependencyManagement锁定依赖的版本-->
@@ -55,6 +61,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
 
             <!--mybatis-plus 持久层-->
             <dependency>
@@ -123,6 +130,24 @@
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
                 <version>${jodatime.version}</version>
+            </dependency>
+
+            <!-- apollo -->
+            <dependency>
+                <groupId>com.ctrip.framework.apollo</groupId>
+                <artifactId>apollo-client</artifactId>
+                <version>${apollo.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>${commons-pool2.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

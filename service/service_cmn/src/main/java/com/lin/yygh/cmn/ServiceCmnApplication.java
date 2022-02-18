@@ -1,13 +1,17 @@
 package com.lin.yygh.cmn;
 
+import com.ctrip.framework.apollo.spring.annotation.EnableApolloConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @ComponentScan(basePackages = "com.lin")
-public class ServiceHospApplication {
+@EnableDiscoveryClient
+@EnableApolloConfig
+public class ServiceCmnApplication {
     public static void main(String[] args) {
-        SpringApplication.run(ServiceHospApplication.class, args);
+        SpringApplication.run(ServiceCmnApplication.class, args);
     }
 }
