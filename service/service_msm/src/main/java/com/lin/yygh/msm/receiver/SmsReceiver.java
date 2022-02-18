@@ -3,13 +3,13 @@ package com.lin.yygh.msm.receiver;
 import com.lin.yygh.msm.service.MsmService;
 import com.lin.yygh.rabbit.constant.MqConst;
 import com.lin.yygh.vo.msm.MsmVo;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import sun.plugin2.message.Message;
 
 import java.nio.channels.Channel;
 

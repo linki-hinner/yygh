@@ -6,12 +6,12 @@ import com.lin.yygh.rabbit.constant.MqConst;
 import com.lin.yygh.rabbit.servcie.RabbitService;
 import com.lin.yygh.vo.msm.MsmVo;
 import com.lin.yygh.vo.order.OrderMqVo;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.Exchange;
 import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.QueueBinding;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import sun.plugin2.message.Message;
 
 import java.io.IOException;
 import java.nio.channels.Channel;
