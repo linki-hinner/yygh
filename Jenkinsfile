@@ -7,7 +7,7 @@ pipeline {
   }
   stages {
     stage('git-clone') {
-      agent any
+      agent maven
       steps {
         git(url: 'https://github.com/linki-hinner/yygh.git', changelog: true, poll: false, branch: 'release')
         sh 'ls'
