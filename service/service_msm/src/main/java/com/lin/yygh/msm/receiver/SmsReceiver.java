@@ -17,6 +17,7 @@ import java.nio.channels.Channel;
 public class SmsReceiver {
     @Autowired
     private MsmService msmService;
+
     @RabbitListener(bindings = @QueueBinding(
             value = @Queue(value = MqConst.QUEUE_MSM_ITEM, durable = "true"),
             exchange = @Exchange(value = MqConst.EXCHANGE_DIRECT_MSM),
@@ -26,3 +27,5 @@ public class SmsReceiver {
         msmService.send(msmVo);
     }
 }
+
+
