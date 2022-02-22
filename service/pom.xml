@@ -12,11 +12,11 @@
     <artifactId>service</artifactId>
     <packaging>pom</packaging>
     <modules>
-        <module>service_hosp</module>
-        <module>service_user</module>
-        <module>service_cmn</module>
-        <module>service_msm</module>
-        <module>service_oss</module>
+        <module>service-hosp</module>
+        <module>service-user</module>
+        <module>service-cmn</module>
+        <module>service-msm</module>
+        <module>service-oss</module>
         <module>service-order</module>
     </modules>
 
