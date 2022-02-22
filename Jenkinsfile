@@ -23,7 +23,10 @@ pipeline {
             steps {
                 container('maven') {
                     sh 'mvn clean package -Dmaven.test.skip=true'
-                    sh 'ls'
+                    dir('hospital-manage'){
+                        sh 'ls'
+                        sh 'mvn clean package -Dmaven.test.skip=true'
+                    }
                     sh 'ls service'
                 }
 
