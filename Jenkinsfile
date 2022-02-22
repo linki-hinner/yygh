@@ -11,23 +11,38 @@ pipeline {
             steps {
                 container('maven') {
                     sh 'ls'
-                    git(url: 'https://github.com/linki-hinner/yygh.git', branch: 'release', changelog: true, poll: false)
-                    sh 'ls service'
+                    sh 'git clone --branch $BRANCH_NAME $GIT_URL'
+                    sh 'ls yygh'
                 }
 
             }
         }
 
         stage('build') {
-            agent none
-            steps {
-                container('maven') {
-                    sh 'mvn clean package -Dmaven.test.skip=true'
-                    dir('hospital-manage'){
-                        sh 'ls'
-                        sh 'mvn clean package -Dmaven.test.skip=true'
+            parallel {
+                stage('maven主体') {
+                    agent none
+                    steps {
+                        container('maven') {
+                            dir('yygh') {
+                                sh 'ls'
+                                sh 'pwd'
+                                sh 'mvn clean package -Dmaven.test.skip=true'
+                            }
+
+                        }
+
                     }
-                    sh 'ls service'
+                }
+
+                stage('maven模拟') {
+                    agent none
+                    steps {
+                        container('maven') {
+                            sh 'cd yygh/hospital-manage && ls && pwd && mvn clean package'
+                        }
+
+                    }
                 }
 
             }
@@ -39,19 +54,25 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls hospital-manage'
-                            sh 'docker build -t hospital-manage:latest -f hospital-manage/Dockerfile  ./hospital-manage/'
+                            dir('yygh') {
+                                sh 'ls hospital-manage'
+                                sh 'docker build -t hospital-manage:latest -f hospital-manage/Dockerfile  ./hospital-manage/'
+                            }
+
                         }
 
                     }
                 }
 
-                stage('构建server-gateway镜像') {
+                stage('构建gateway镜像') {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls gateway'
-                            sh 'docker build -t gateway:latest -f gateway/Dockerfile  ./gateway/'
+                            dir('yygh') {
+                                sh 'ls gateway'
+                                sh 'docker build -t gateway:latest -f gateway/Dockerfile  ./gateway/'
+                            }
+
                         }
 
                     }
@@ -61,8 +82,11 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls service/service_cmn'
-                            sh 'docker build -t service-cmn:latest -f service/service-cmn/Dockerfile  ./service/service-cmn/'
+                            dir('yygh') {
+                                sh 'ls service/service-cmn'
+                                sh 'docker build -t service-cmn:latest -f service/service-cmn/Dockerfile  ./service/service-cmn/'
+                            }
+
                         }
 
                     }
@@ -72,8 +96,11 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls service/service-hosp'
-                            sh 'docker build -t service-hosp:latest -f service/service-hosp/Dockerfile  ./service/service-hosp/'
+                            dir('yygh') {
+                                sh 'ls service/service-hosp'
+                                sh 'docker build -t service-hosp:latest -f service/service-hosp/Dockerfile  ./service/service-hosp/'
+                            }
+
                         }
 
                     }
@@ -83,8 +110,11 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls service/service-order'
-                            sh 'docker build -t service-order:latest -f service/service-order/Dockerfile  ./service/service-order/'
+                            dir('yygh') {
+                                sh 'ls service/service-order'
+                                sh 'docker build -t service-order:latest -f service/service-order/Dockerfile  ./service/service-order/'
+                            }
+
                         }
 
                     }
@@ -94,19 +124,25 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls service/service-oss'
-                            sh 'docker build -t service-oss:latest -f service/service-oss/Dockerfile  ./service/service-oss/'
+                            dir('yygh') {
+                                sh 'ls service/service-oss'
+                                sh 'docker build -t service-oss:latest -f service/service-oss/Dockerfile  ./service/service-oss/'
+                            }
+
                         }
 
                     }
                 }
 
-                stage('构建service-sms镜像') {
+                stage('构建service-msm镜像') {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls service/service-sms'
-                            sh 'docker build -t service-sms:latest -f service/service-sms/Dockerfile  ./service/service-sms/'
+                            dir('yygh') {
+                                sh 'ls service/service-msm'
+                                sh 'docker build -t service-msm:latest -f service/service-msm/Dockerfile  ./service/service-msm/'
+                            }
+
                         }
 
                     }
@@ -116,8 +152,11 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls service/service-user'
-                            sh 'docker build -t service-user:latest -f service/service-user/Dockerfile  ./service/service-user/'
+                            dir('yygh') {
+                                sh 'ls service/service-user'
+                                sh 'docker build -t service-user:latest -f service/service-user/Dockerfile  ./service/service-user/'
+                            }
+
                         }
 
                     }
@@ -132,29 +171,21 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'docker logout'
-                            sh 'docker login'
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag hospital-manage:latest $REGISTRY/$DOCKERHUB_NAMESPACE/hospital-manage:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/hospital-manage:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASSWORD'
+                            sh 'docker tag hospital-manage:latest wocaoeee/yygh:hospital-manageSNAPSHOT-$BUILD_NUMBER'
+                            sh 'docker push  wocaoeee/yygh:hospital-manageSNAPSHOT-$BUILD_NUMBER'
                         }
 
                     }
                 }
 
-                stage('推送server-gateway镜像') {
+                stage('推送gateway镜像') {
                     agent none
                     steps {
                         container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag server-gateway:latest $REGISTRY/$DOCKERHUB_NAMESPACE/server-gateway:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/server-gateway:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh "docker login -u $DOCKER_USER -p $DOCKER_PASSWORD"
+                            sh "docker tag gateway:latest wocaoeee/yygh:gatewaySNAPSHOT-$BUILD_NUMBER"
+                            sh "docker push  wocaoeee/yygh:gatewaySNAPSHOT-$BUILD_NUMBER"
                         }
 
                     }
@@ -164,12 +195,9 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-cmn:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-cmn:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-cmn:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh "docker login -u $DOCKER_USER -p $DOCKER_PASSWORD"
+                            sh "docker tag service-cmn:latest wocaoeee/yygh:service-cmnSNAPSHOT-$BUILD_NUMBER"
+                            sh "docker push  wocaoeee/yygh:service-cmnSNAPSHOT-$BUILD_NUMBER"
                         }
 
                     }
@@ -179,12 +207,9 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-hosp:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-hosp:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-hosp:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASSWORD'
+                            sh 'docker tag service-hosp:latest wocaoeee/yygh:service-hospSNAPSHOT-$BUILD_NUMBER'
+                            sh 'docker push  wocaoeee/yygh:service-hospSNAPSHOT-$BUILD_NUMBER'
                         }
 
                     }
@@ -194,12 +219,9 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-order:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-order:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-order:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASSWORD'
+                            sh 'docker tag service-order:latest wocaoeee/yygh:service-orderSNAPSHOT-$BUILD_NUMBER'
+                            sh 'docker push  wocaoeee/yygh:service-orderSNAPSHOT-$BUILD_NUMBER'
                         }
 
                     }
@@ -209,57 +231,21 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-oss:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-oss:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-oss:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASSWORD'
+                            sh 'docker tag service-oss:latest wocaoeee/yygh:service-ossSNAPSHOT-$BUILD_NUMBER'
+                            sh 'docker push  wocaoeee/yygh:service-ossSNAPSHOT-$BUILD_NUMBER'
                         }
 
                     }
                 }
 
-                stage('推送service-sms镜像') {
+                stage('推送service-msm镜像') {
                     agent none
                     steps {
                         container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-sms:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-sms:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-sms:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
-                        }
-
-                    }
-                }
-
-                stage('推送service-statistics镜像') {
-                    agent none
-                    steps {
-                        container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-statistics:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-statistics:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-statistics:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
-                        }
-
-                    }
-                }
-
-                stage('推送service-task镜像') {
-                    agent none
-                    steps {
-                        container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-task:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-task:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-task:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASSWORD'
+                            sh 'docker tag service-msm:latest wocaoeee/yygh:service-msmSNAPSHOT-$BUILD_NUMBER'
+                            sh 'docker push  wocaoeee/yygh:service-msmSNAPSHOT-$BUILD_NUMBER'
                         }
 
                     }
@@ -269,12 +255,9 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            withCredentials([usernamePassword(credentialsId : 'aliyun-docker-registry' ,usernameVariable : 'DOCKER_USER_VAR' ,passwordVariable : 'DOCKER_PWD_VAR' ,)]) {
-                                sh 'echo "$DOCKER_PWD_VAR" | docker login $REGISTRY -u "$DOCKER_USER_VAR" --password-stdin'
-                                sh 'docker tag service-user:latest $REGISTRY/$DOCKERHUB_NAMESPACE/service-user:SNAPSHOT-$BUILD_NUMBER'
-                                sh 'docker push  $REGISTRY/$DOCKERHUB_NAMESPACE/service-user:SNAPSHOT-$BUILD_NUMBER'
-                            }
-
+                            sh 'docker login -u $DOCKER_USER -p $DOCKER_PASSWORD'
+                            sh 'docker tag service-user:latest wocaoeee/yygh:service-userSNAPSHOT-$BUILD_NUMBER'
+                            sh 'docker push wocaoeee/yygh:service-userSNAPSHOT-$BUILD_NUMBER'
                         }
 
                     }
@@ -283,14 +266,30 @@ pipeline {
             }
         }
 
+        stage('deploy') {
+            parallel {
+                stage('hospital-manage') {
+                    agent none
+                    steps {
+                        kubernetesDeploy(enableConfigSubstitution: true, deleteResource: false, configs: 'yygh/hospital-manage/deploy/deploy.yml', kubeconfigId: 'yygh-kubeconfig')
+                    }
+                }
+
+                stage('hospital-manage-test') {
+                    agent none
+                    steps {
+                        sh 'cd yygh/hospital-manage && ls && cat deploy/deploy.yaml'
+                    }
+                }
+
+            }
+        }
+
     }
     environment {
-        DOCKER_CREDENTIAL_ID = 'dockerhub-id'
-        GITHUB_CREDENTIAL_ID = 'github-id'
-        KUBECONFIG_CREDENTIAL_ID = 'demo-kubeconfig'
-        REGISTRY = 'docker.io'
-        DOCKERHUB_NAMESPACE = 'docker_username'
-        GITHUB_ACCOUNT = 'kubesphere'
-        APP_NAME = 'devops-java-sample'
+        BRANCH_NAME = 'release'
+        GIT_URL = 'git://github.com/linki-hinner/yygh.git'
+        DOCKER_USER = 'wocaoeee'
+        DOCKER_PASSWORD = 'Chl159951'
     }
 }
