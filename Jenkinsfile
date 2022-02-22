@@ -12,7 +12,7 @@ pipeline {
                 container('maven') {
                     sh 'ls'
                     git(url: 'https://github.com/linki-hinner/yygh.git', branch: 'release', changelog: true, poll: false)
-                    sh 'ls'
+                    sh 'ls service'
                 }
 
             }
@@ -22,9 +22,9 @@ pipeline {
             agent none
             steps {
                 container('maven') {
-                    sh 'ls'
                     sh 'mvn clean package -Dmaven.test.skip=true'
                     sh 'ls'
+                    sh 'ls service'
                 }
 
             }
@@ -47,8 +47,8 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls server-gateway'
-                            sh 'docker build -t server-gateway:latest -f server-gateway/Dockerfile  ./server-gateway/'
+                            sh 'ls gateway'
+                            sh 'docker build -t gateway:latest -f gateway/Dockerfile  ./gateway/'
                         }
 
                     }
@@ -58,7 +58,7 @@ pipeline {
                     agent none
                     steps {
                         container('maven') {
-                            sh 'ls service/service-cmn'
+                            sh 'ls service/service_cmn'
                             sh 'docker build -t service-cmn:latest -f service/service-cmn/Dockerfile  ./service/service-cmn/'
                         }
 
@@ -124,7 +124,6 @@ pipeline {
         }
 
     }
-
     environment {
         DOCKER_CREDENTIAL_ID = 'dockerhub-id'
         GITHUB_CREDENTIAL_ID = 'github-id'
