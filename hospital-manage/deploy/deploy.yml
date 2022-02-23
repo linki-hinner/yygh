@@ -24,7 +24,7 @@ spec:
       imagePullSecrets:
         - name: docker-hub
       containers:
-        - image: $REGISTRY/$ALIYUNHUB_NAMESPACE/hospital-manage:SNAPSHOT-$BUILD_NUMBER
+        - image: @URL:hospital-manageSNAPSHOT-@BUILD_NUMBER
  #         readinessProbe:
  #           httpGet:
  #             path: /actuator/health
