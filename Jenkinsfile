@@ -271,6 +271,9 @@ pipeline {
                 stage('hospital-manage') {
                     agent none
                     steps {
+                        sh "sed -i 's/@URL/$GIT_URL/g' yygh/hospital-manage/deploy/deploy.yml"
+                        sh "sed -i 's/@BUILD_NUMBER/$BUILD_NUMBER/g' yygh/hospital-manage/deploy/deploy.yml"
+                        sh 'cat yygh/hospital-manage/deploy/deploy.ym'
                         kubernetesDeploy(enableConfigSubstitution: true, deleteResource: false, configs: 'yygh/hospital-manage/deploy/deploy.yml', kubeconfigId: 'yygh-kubeconfig')
                     }
                 }
