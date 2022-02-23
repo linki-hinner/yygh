@@ -18,6 +18,19 @@ pipeline {
             }
         }
 
+        stage('deploy-build'){
+            parallel{
+                stage("hospital-manage"){
+                    agent none
+                    steps{
+                        sh "chmod 700 yygh/hospital-manage/deploy"
+                        sh "cd yygh/hospital-manage/deploy && sed s/@URL/${GIT_URL_2}/g deploy.yml > dep_tmp"
+                        sh "cd yygh/hospital-manage/deploy && sed -i s/@BUILD_NUMBER/${BUILD_NUMBER}/g dep_tmp > deploy.yml"
+                    }
+                }
+            }
+        }
+
         stage('build') {
             parallel {
                 stage('maven主体') {
@@ -44,9 +57,10 @@ pipeline {
 
                     }
                 }
-
             }
         }
+
+
 
         stage('docker_build') {
             parallel {
@@ -271,17 +285,8 @@ pipeline {
                 stage('hospital-manage') {
                     agent none
                     steps {
-                        sh "sed -i 's/@URL/$GIT_URL/g' yygh/hospital-manage/deploy/deploy.yml"
-                        sh "sed -i 's/@BUILD_NUMBER/$BUILD_NUMBER/g' yygh/hospital-manage/deploy/deploy.yml"
-                        sh 'cat yygh/hospital-manage/deploy/deploy.ym'
-                        kubernetesDeploy(enableConfigSubstitution: true, deleteResource: false, configs: 'yygh/hospital-manage/deploy/deploy.yml', kubeconfigId: 'yygh-kubeconfig')
-                    }
-                }
-
-                stage('hospital-manage-test') {
-                    agent none
-                    steps {
-                        sh 'cd yygh/hospital-manage && ls && cat deploy/deploy.yaml'
+                        sh 'cat yygh/hospital-manage/deploy/deploy.yml'
+                        kubernetesDeploy(enableConfigSubstitution: true, deleteResource: false, configs: 'yygh/hospital-manage/deploy/deploy.yml', kubeconfigId: "$KUBE_CONFIG_ID")
                     }
                 }
 
@@ -294,5 +299,6 @@ pipeline {
         GIT_URL = 'git://github.com/linki-hinner/yygh.git'
         DOCKER_USER = 'wocaoeee'
         DOCKER_PASSWORD = 'Chl159951'
+        KUBE_CONFIG_ID = 'yygh-kubeconfig'
     }
 }
