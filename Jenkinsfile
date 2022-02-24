@@ -297,6 +297,7 @@ pipeline {
     environment {
         BRANCH_NAME = 'release'
         GIT_URL = 'git://github.com/linki-hinner/yygh.git'
+        DOCKER_URL = 'wocaoeee/yygh'
         DOCKER_USER = 'wocaoeee'
         DOCKER_PASSWORD = 'Chl159951'
         KUBE_CONFIG_ID = 'yygh-kubeconfig'
