@@ -22,7 +22,7 @@ spec:
         app: server-gateway
     spec:
       imagePullSecrets:
-        - name: aliyun-docker-hub  #提前在项目下配置访问阿里云的账号密码
+        - name: docker-hub  #提前在项目下配置访问阿里云的账号密码
       containers:
         - image: $GIT_URL:server-gatewaySNAPSHOT-$BUILD_NUMBER
  #         readinessProbe:

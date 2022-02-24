@@ -24,7 +24,7 @@ spec:
       imagePullSecrets:
         - name: docker-hub
       containers:
-        - image: @URL:hospital-manageSNAPSHOT-@BUILD_NUMBER
+        - image: $GIT_URL:server-gatewaySNAPSHOT-$BUILD_NUMBER
  #         readinessProbe:
  #           httpGet:
  #             path: /actuator/health
