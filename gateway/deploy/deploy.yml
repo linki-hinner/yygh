@@ -24,7 +24,7 @@ spec:
       imagePullSecrets:
         - name: docker-hub  #提前在项目下配置访问阿里云的账号密码
       containers:
-        - image: $DOCKER_URL:server-gatewaySNAPSHOT-$BUILD_NUMBER
+        - image: $DOCKER_URL:gatewaySNAPSHOT-$BUILD_NUMBER
  #         readinessProbe:
  #           httpGet:
  #             path: /actuator/health

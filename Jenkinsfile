@@ -18,19 +18,6 @@ pipeline {
             }
         }
 
-        stage('deploy-build'){
-            parallel{
-                stage("hospital-manage"){
-                    agent none
-                    steps{
-                        sh "chmod 700 yygh/hospital-manage/deploy"
-                        sh "cd yygh/hospital-manage/deploy && sed s/@URL/${GIT_URL_2}/g deploy.yml > dep_tmp"
-                        sh "cd yygh/hospital-manage/deploy && sed -i s/@BUILD_NUMBER/${BUILD_NUMBER}/g dep_tmp > deploy.yml"
-                    }
-                }
-            }
-        }
-
         stage('build') {
             parallel {
                 stage('maven主体') {
