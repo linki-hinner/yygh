@@ -156,7 +156,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderInfo> implem
             msmVo.setParam(param);
 
             orderMqVo.setMsmVo(msmVo);
-            rabbitService.sendMessage(MqConst.EXCHANGE_DIRECT_ORDER, MqConst.ROUTING_ORDER, orderMqVo);
+            rabbitService.sendMessage(MqConst.EXCHANGE_DIRECT, MqConst.ROUTING_ORDER, orderMqVo);
         } else {
             throw new YyghException(result.getString("message"), ResultCodeEnum.FAIL.getCode());
         }
@@ -174,23 +174,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderInfo> implem
         String createTimeEnd = orderQueryVo.getCreateTimeEnd();
         //对条件值进行非空判断
         QueryWrapper<OrderInfo> wrapper = new QueryWrapper<>();
-        if(!StringUtils.isEmpty(name)) {
-            wrapper.like("hosname",name);
+        if (!StringUtils.isEmpty(name)) {
+            wrapper.like("hosname", name);
         }
-        if(null == patientId) {
-            wrapper.eq("patient_id",patientId);
+        if (null == patientId) {
+            wrapper.eq("patient_id", patientId);
         }
-        if(!StringUtils.isEmpty(orderStatus)) {
-            wrapper.eq("order_status",orderStatus);
+        if (!StringUtils.isEmpty(orderStatus)) {
+            wrapper.eq("order_status", orderStatus);
         }
-        if(!StringUtils.isEmpty(reserveDate)) {
-            wrapper.ge("reserve_date",reserveDate);
+        if (!StringUtils.isEmpty(reserveDate)) {
+            wrapper.ge("reserve_date", reserveDate);
         }
-        if(!StringUtils.isEmpty(createTimeBegin)) {
-            wrapper.ge("create_time",createTimeBegin);
+        if (!StringUtils.isEmpty(createTimeBegin)) {
+            wrapper.ge("create_time", createTimeBegin);
         }
-        if(!StringUtils.isEmpty(createTimeEnd)) {
-            wrapper.le("create_time",createTimeEnd);
+        if (!StringUtils.isEmpty(createTimeEnd)) {
+            wrapper.le("create_time", createTimeEnd);
         }
         //调用mapper的方法
         IPage<OrderInfo> pages = baseMapper.selectPage(pageParam, wrapper);
