@@ -4,8 +4,6 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import java.util.Date;
-
 @Data
 @ApiModel(description = "Order")
 public class OrderQueryVo {
@@ -36,5 +34,12 @@ public class OrderQueryVo {
 	private String createTimeBegin;
 	private String createTimeEnd;
 
+
+	@ApiModelProperty(value = "当前页数")
+	private Integer current;
+
+
+	@ApiModelProperty(value = "每页记录")
+	private Integer size;
 }
 

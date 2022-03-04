@@ -9,8 +9,6 @@ import com.lin.yygh.vo.cmn.DictEeVo;
 
 public class DictListener extends AnalysisEventListener<DictEeVo> {
     private final DictMapper dictMapper;
-//    private final List<DictEeVo>  catchData = new ArrayList<>();
-//    private final int DEFAULT_INSERT_SIZE = 20;
 
     public DictListener(DictMapper dictMapper) {
         this.dictMapper = dictMapper;
@@ -18,10 +16,6 @@ public class DictListener extends AnalysisEventListener<DictEeVo> {
 
     @Override
     public void invoke(DictEeVo data, AnalysisContext context) {
-//        catchData.add(data);
-//        if(catchData.size() > DEFAULT_INSERT_SIZE){
-//            Iterator<DictEeVo> iterator = catchData.iterator();
-//        }
         Dict dict = new Dict();
         dict.setParentId(data.getParentId());
         dict.setName(data.getName());

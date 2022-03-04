@@ -1,7 +1,6 @@
 package com.lin.yygh.order.servcie.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -19,41 +18,24 @@ import com.lin.yygh.rabbit.servcie.RabbitService;
 import com.lin.yygh.user.client.PatientFeignClient;
 import com.lin.yygh.vo.hosp.ScheduleOrderVo;
 import com.lin.yygh.vo.msm.MsmVo;
-import com.lin.yygh.vo.order.OrderMqVo;
-import com.lin.yygh.vo.order.OrderQueryVo;
-import com.lin.yygh.vo.order.SignInfoVo;
+import com.lin.yygh.vo.order.*;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderInfo> implements OrderService {
-    private PatientFeignClient patientFeignClient;
-    private HospitalFeignClient hospitalFeignClient;
-    private RabbitService rabbitService;
-
-    @Autowired
-    public void setPatientFeignClient(PatientFeignClient patientFeignClient) {
-        this.patientFeignClient = patientFeignClient;
-    }
-
-    @Autowired
-    public void setHospitalFeignClient(HospitalFeignClient hospitalFeignClient) {
-        this.hospitalFeignClient = hospitalFeignClient;
-    }
-
-    @Autowired
-    public void setRabbitService(RabbitService rabbitService) {
-        this.rabbitService = rabbitService;
-    }
+    private final PatientFeignClient patientFeignClient;
+    private final HospitalFeignClient hospitalFeignClient;
+    private final RabbitService rabbitService;
 
     @Override
     public Long saveOrder(String scheduleId, Long patientId) {
@@ -164,50 +146,76 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, OrderInfo> implem
     }
 
     @Override
-    public IPage<OrderInfo> selectPage(Page<OrderInfo> pageParam, OrderQueryVo orderQueryVo) {
-        //orderQueryVo获取条件值
-        String name = orderQueryVo.getKeyword(); //医院名称
-        Long patientId = orderQueryVo.getPatientId(); //就诊人名称
-        String orderStatus = orderQueryVo.getOrderStatus(); //订单状态
-        String reserveDate = orderQueryVo.getReserveDate();//安排时间
-        String createTimeBegin = orderQueryVo.getCreateTimeBegin();
-        String createTimeEnd = orderQueryVo.getCreateTimeEnd();
-        //对条件值进行非空判断
-        QueryWrapper<OrderInfo> wrapper = new QueryWrapper<>();
-        if (!StringUtils.isEmpty(name)) {
-            wrapper.like("hosname", name);
-        }
-        if (null == patientId) {
-            wrapper.eq("patient_id", patientId);
-        }
-        if (!StringUtils.isEmpty(orderStatus)) {
-            wrapper.eq("order_status", orderStatus);
-        }
-        if (!StringUtils.isEmpty(reserveDate)) {
-            wrapper.ge("reserve_date", reserveDate);
-        }
-        if (!StringUtils.isEmpty(createTimeBegin)) {
-            wrapper.ge("create_time", createTimeBegin);
-        }
-        if (!StringUtils.isEmpty(createTimeEnd)) {
-            wrapper.le("create_time", createTimeEnd);
-        }
+    public IPage<OrderInfo> selectPage(OrderQueryVo orderQueryVo) {
+//        //orderQueryVo获取条件值
+//        String name = orderQueryVo.getKeyword(); //医院名称
+//        Long patientId = orderQueryVo.getPatientId(); //就诊人名称
+//        String orderStatus = orderQueryVo.getOrderStatus(); //订单状态
+//        String reserveDate = orderQueryVo.getReserveDate();//安排时间
+//        String createTimeBegin = orderQueryVo.getCreateTimeBegin();
+//        String createTimeEnd = orderQueryVo.getCreateTimeEnd();
+//        //对条件值进行非空判断
+//        QueryWrapper<OrderInfo> wrapper = new QueryWrapper<>();
+//        if (!StringUtils.isEmpty(name)) {
+//            wrapper.like("hosname", name);
+//        }
+//        if (null == patientId) {
+//            wrapper.eq("patient_id", patientId);
+//        }
+//        if (!StringUtils.isEmpty(orderStatus)) {
+//            wrapper.eq("order_status", orderStatus);
+//        }
+//        if (!StringUtils.isEmpty(reserveDate)) {
+//            wrapper.ge("reserve_date", reserveDate);
+//        }
+//        if (!StringUtils.isEmpty(createTimeBegin)) {
+//            wrapper.ge("create_time", createTimeBegin);
+//        }
+//        if (!StringUtils.isEmpty(createTimeEnd)) {
+//            wrapper.le("create_time", createTimeEnd);
+//        }
         //调用mapper的方法
-        IPage<OrderInfo> pages = baseMapper.selectPage(pageParam, wrapper);
-        //编号变成对应值封装
-        pages.getRecords().stream().forEach(item -> {
-            this.packOrderInfo(item);
-        });
-        return pages;
+//        IPage<OrderInfo> pages = baseMapper.selectPage(pageParam, wrapper);
+//        //编号变成对应值封装
+//        pages.getRecords().forEach(this::fillOrderInfo);
+
+        List<OrderInfo> orderQueryVoList = baseMapper.getPageByOrderQueryVo(orderQueryVo);
+        orderQueryVoList.forEach(this::fillOrderInfo);
+
+        int total = baseMapper.getCountByOrderQueryVo(orderQueryVo);
+
+        Page<OrderInfo> orderInfoPage = new Page<>();
+        orderInfoPage.setRecords(orderQueryVoList);
+        orderInfoPage.setTotal(total);
+
+        return orderInfoPage;
     }
 
     @Override
     public OrderInfo getOrder(String orderId) {
         OrderInfo orderInfo = baseMapper.selectById(orderId);
-        return this.packOrderInfo(orderInfo);
+        return this.fillOrderInfo(orderInfo);
     }
 
-    private OrderInfo packOrderInfo(OrderInfo orderInfo) {
+    @Override
+    public Map<String, Object> getCountMap(OrderCountQueryVo orderCountQueryVo) {
+        List<OrderCountVo> count = baseMapper.ListOrderCountVo(orderCountQueryVo);
+
+        List<String> dateList = count.stream()
+                .map(OrderCountVo::getReserveDate)
+                .collect(Collectors.toList());
+
+        List<Integer> countList = count.stream()
+                .map(OrderCountVo::getCount)
+                .collect(Collectors.toList());
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("dateList", dateList);
+        map.put("countList", countList);
+        return map;
+    }
+
+    private OrderInfo fillOrderInfo(OrderInfo orderInfo) {
         orderInfo.getParam().put("orderStatusString", OrderStatusEnum.getStatusNameByStatus(orderInfo.getOrderStatus()));
         return orderInfo;
     }

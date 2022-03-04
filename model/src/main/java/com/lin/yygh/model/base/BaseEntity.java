@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -15,6 +16,10 @@ import java.util.Map;
 
 @Data
 public class BaseEntity implements Serializable {
+    @JsonIgnore
+    public final static int STATE_DELETED = 1;
+    @JsonIgnore
+    public final static int STATE_SURVIVE = 0;
 
     @ApiModelProperty(value = "id")
     @TableId(type = IdType.AUTO)

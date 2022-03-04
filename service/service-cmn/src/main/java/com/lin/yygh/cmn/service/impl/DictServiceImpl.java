@@ -1,7 +1,6 @@
 package com.lin.yygh.cmn.service.impl;
 
 import com.alibaba.excel.EasyExcel;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lin.yygh.cmn.listener.DictListener;
 import com.lin.yygh.cmn.mapper.DictMapper;
@@ -12,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
@@ -32,14 +30,8 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
 
     @Override
     @Cacheable(value = "dict", keyGenerator = "keyGenerator")
-    public List<Dict> findChildData(Long id) {
-        QueryWrapper<Dict> dictQueryWrapper = new QueryWrapper<>();
-        dictQueryWrapper.eq("parent_id", id);
-        List<Dict> list = baseMapper.selectList(dictQueryWrapper);
-        list.forEach(dict -> {
-            dict.setHasChildren(hasChildren(dict.getId()));
-        });
-        return list;
+    public List<Dict> setChildData(Long id) {
+        return baseMapper.getByParentId(id);
     }
 
     @Override
@@ -86,38 +78,32 @@ public class DictServiceImpl extends ServiceImpl<DictMapper, Dict> implements Di
 
     @Override
     public String getDictName(String dictCode, String value) {
-        Dict dict;
-        if (StringUtils.isEmpty(dictCode)) {
-            QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("value", value);
-            dict = baseMapper.selectOne(queryWrapper);
-        } else {
-            QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
-            queryWrapper.eq("dict_code", dictCode);
-            Dict parentDict = baseMapper.selectOne(queryWrapper);
-            if (parentDict == null) {
-                return null;
-            }
-            Long parent_id = parentDict.getId();
-            queryWrapper.clear();
-            queryWrapper.eq("value", value);
-            queryWrapper.eq("parent_id", parent_id);
-            dict = baseMapper.selectOne(queryWrapper);
-        }
-        return dict == null ? null : dict.getName();
+//        Dict dict;
+//        if (StringUtils.isEmpty(dictCode)) {
+//            QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
+//            queryWrapper.eq("value", value);
+//            dict = baseMapper.selectOne(queryWrapper);
+//        } else {
+//            QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
+//            queryWrapper.eq("dict_code", dictCode);
+//            Dict parentDict = baseMapper.selectOne(queryWrapper);
+//            if (parentDict == null) {
+//                return null;
+//            }
+//            Long parent_id = parentDict.getId();
+//            queryWrapper.clear();
+//            queryWrapper.eq("value", value);
+//            queryWrapper.eq("parent_id", parent_id);
+////            dict = baseMapper.selectOne(queryWrapper);
+////        }
+//        return dict == null ? null : dict.getName();
+        return baseMapper.selectById(value).getName();
     }
 
     @Override
     public List<Dict> findByDictCode(String dictCode) {
-        QueryWrapper<Dict> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("dict_code", dictCode);
-        Dict dict = baseMapper.selectOne(queryWrapper);
-        return dictService.findChildData(dict.getId());
+        Dict dict = baseMapper.getByDictCode(dictCode);
+        return dictService.setChildData(dict.getId());
     }
 
-    private boolean hasChildren(Long id) {
-        QueryWrapper<Dict> dictQueryWrapper = new QueryWrapper<>();
-        dictQueryWrapper.eq("parent_id", id);
-        return baseMapper.selectCount(dictQueryWrapper) > 0;
-    }
 }

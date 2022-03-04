@@ -71,7 +71,8 @@ public class MsmServiceImpl implements MsmService {
     public boolean send(MsmVo msmVo) {
         if(!StringUtils.isEmpty(msmVo.getPhone())) {
             String code = (String)msmVo.getParam().get("code");
-            return this.send(msmVo.getPhone(),code);
+            System.out.println(code);
+            return this.send(msmVo.getPhone(),"123456");
         }
         return false;
     }

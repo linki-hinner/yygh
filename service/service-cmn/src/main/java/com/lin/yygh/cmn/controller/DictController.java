@@ -8,9 +8,11 @@ import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import springfox.documentation.annotations.ApiIgnore;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -20,11 +22,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DictController {
     private final DictService dictService;
-
-    @ApiIgnore
-    @GetMapping("/admin/cmn/dict")
-    public void get() {
-    }
 
     @ApiOperation("导出数据字典接口")
     @GetMapping("/admin/cmn/dict/exportData")
@@ -50,7 +47,7 @@ public class DictController {
     @ApiImplicitParam(name = "id", value = "数据字典id", paramType = "path", defaultValue = "1")
     @GetMapping("/admin/cmn/dict/findChildData/{id}")
     public Result<?> findChildData(@PathVariable Long id) {
-        return Result.ok(dictService.findChildData(id));
+        return Result.ok(dictService.setChildData(id));
     }
 
     @ApiOperation("根据dicode和value查询")

@@ -71,7 +71,6 @@ public class HospApiController {
             @PathVariable String hoscode,
             @ApiParam(name = "depcode", value = "科室code", required = true)
             @PathVariable String depcode) {
-        System.out.println("in");
         return Result.ok(scheduleService.getBookingScheduleRule(page, limit, hoscode, depcode));
     }
 

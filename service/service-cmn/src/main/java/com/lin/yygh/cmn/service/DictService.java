@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 public interface DictService extends IService<Dict> {
-    List<Dict> findChildData(Long id);
+    List<Dict> setChildData(Long id);
 
     void exportDictData(HttpServletResponse response);
 
