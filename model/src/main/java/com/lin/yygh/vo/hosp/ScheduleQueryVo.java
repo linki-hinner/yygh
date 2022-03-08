@@ -13,8 +13,14 @@ public class ScheduleQueryVo {
 	@ApiModelProperty(value = "医院编号")
 	private String hoscode;
 
+	@ApiModelProperty(value = "医院Id")
+	private Long hospitalId;
+
 	@ApiModelProperty(value = "科室编号")
 	private String depcode;
+
+	@ApiModelProperty(value = "医院编号")
+	private Long departmentId;
 
 	@ApiModelProperty(value = "医生编号")
 	private String doccode;
@@ -25,5 +31,10 @@ public class ScheduleQueryVo {
 	@ApiModelProperty(value = "安排时间（0：上午 1：下午）")
 	private Integer workTime;
 
+	@ApiModelProperty(value = "当前页")
+	private Integer current;
+
+	@ApiModelProperty(value = "每页记录数")
+	private Integer size;
 }
 

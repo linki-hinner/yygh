@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 
 @Service
-public class HospitalSetServiceImpl extends ServiceImpl<HospitalSetMapper, HospitalSet> implements HospitalSetService {
+public class HospitalSetServiceImpl extends hostype<HospitalSetMapper, HospitalSet> implements HospitalSetService {
 
     @Override
     public Optional<HospitalSet> getHospitalSetByHoscode(String hoscode) {

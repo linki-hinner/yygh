@@ -7,6 +7,7 @@ import com.lin.yygh.model.hosp.v2.Department2;
 import com.lin.yygh.vo.hosp.DepartmentQueryVo;
 import com.lin.yygh.vo.hosp.DepartmentVo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-//@Service
+@Service
 @RequiredArgsConstructor
 public class DepartmentServiceImpl2 implements DepartmentService2 {
     private final DepartmentMapper departmentMapper;
@@ -78,7 +79,7 @@ public class DepartmentServiceImpl2 implements DepartmentService2 {
     }
 
     @Override
-    public String getDepName(String hoscode, String depcode) {
+    public String getDepName(Long depcode) {
         Department2 department = departmentMapper.getByHoscodeAndDepcode(hoscode, depcode);
         return department == null ? null : department.getDepname();
     }

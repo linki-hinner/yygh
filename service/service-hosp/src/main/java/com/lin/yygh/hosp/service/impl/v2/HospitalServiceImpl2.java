@@ -1,115 +1,89 @@
 package com.lin.yygh.hosp.service.impl.v2;
 
-import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.common.collect.Maps;
 import com.lin.yygh.cmn.client.DictFeignClient;
 import com.lin.yygh.hosp.mapper.HospitalMapper;
-import com.lin.yygh.hosp.repository.HospitalRepository;
+import com.lin.yygh.hosp.service.v2.BookingRuleService;
 import com.lin.yygh.hosp.service.v2.HospitalService2;
 import com.lin.yygh.model.hosp.Hospital;
+import com.lin.yygh.model.hosp.v2.BookingRule2;
 import com.lin.yygh.model.hosp.v2.Hospital2;
 import com.lin.yygh.vo.hosp.HospitalQueryVo;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-public class HospitalServiceImpl2 implements HospitalService2 {
-    private final HospitalRepository hospitalRepository;
+public class HospitalServiceImpl2 extends ServiceImpl<HospitalMapper, Hospital2> implements HospitalService2  {
     private final DictFeignClient dictFeignClient;
-    private HospitalMapper hospitalMapper;
-
+    private final BookingRuleService bookingRuleService;
 
     @Override
-    public void save(Map<String, Object> paramMap) {
-        String string = JSONObject.toJSONString(paramMap);
-        Hospital2 hospital = JSONObject.parseObject(string, Hospital2.class);
-
-        hospitalMapper.insertOrUpdateByHoscode(hospital);
+    public Map<String, Object> selectHospPage(Integer page, Integer limit, HospitalQueryVo hospitalQueryVo) {
+        List<Hospital2> data = baseMapper.listByHospitalQueryVo(hospitalQueryVo);
+        long total = baseMapper.countByHospitalQueryVo(hospitalQueryVo);
+        Map<String, Object> map = Maps.newHashMap();
+        map.put("data", data);
+        map.put("total", total);
+        return map;
     }
 
     @Override
-    public Hospital2 getByHoscode(String hoscode) {
-        return hospitalMapper.getByHoscode(hoscode);
+    public boolean updateStatus(Long id, Integer status) {
+        return baseMapper.updateState(id, status);
     }
 
     @Override
-    public Page<Hospital> selectHospPage(Integer page, Integer limit, HospitalQueryVo hospitalQueryVo) {
-        Pageable pageable = PageRequest.of(page - 1, limit);
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
-                .withIgnoreCase(true);
-
-        Hospital hospital = new Hospital();
-        BeanUtils.copyProperties(hospitalQueryVo, hospital);
-
-        Example<Hospital> example = Example.of(hospital, matcher);
-
-        Page<Hospital> pages = hospitalRepository.findAll(example, pageable);
-        List<Hospital> content = pages.getContent();
-        content.forEach(this::setHospitalInfo);
-
-        return pages;
+    public Hospital2 show(Long id) {
+        Hospital2 hospital = baseMapper.selectById(id);
+        setHospitalInfo(hospital);
+        return hospital;
     }
 
     @Override
-    public boolean updateStatus(String id, Integer status) {
-        boolean result = true;
-        try{
-            Hospital hospital = hospitalRepository.findById(id).get();
-            hospital.setStatus(status);
-            hospital.setUpdateTime(new Date());
-            hospitalRepository.save(hospital);
-        }catch (NoSuchElementException ignored){
-            result = false;
-        }
-        return result;
-    }
-
-    @Override
-    public Hospital show(String id) {
-        try {
-            Hospital hospital = hospitalRepository.findById(id).get();
-            setHospitalInfo(hospital);
-            return hospital;
-        }catch (NoSuchElementException ignore){
-            return null;
-        }
-    }
-
-    @Override
-    public String getHospName(String hoscode) {
-        Hospital hospitalByHoscode = hospitalRepository.getHospitalByHoscode(hoscode);
+    public String getHospName(Long id) {
+        Hospital2 hospitalByHoscode = baseMapper.selectById(id);
         return hospitalByHoscode != null ? hospitalByHoscode.getHosname() : null;
     }
 
     @Override
     public List<Hospital> findByHosname(String hosname) {
-        return hospitalRepository.findHospitalByHosnameLike(hosname);
+        return baseMapper.listByHosnameLike(hosname);
     }
 
     @Override
-    public Map<String, ?> item(String hoscode) {
+    public Map<String, Object> item(Long id) {
+//        Map<String, Object> result = new HashMap<>();
+//        //医院详情
+//        Hospital hospital = hospitalService.getByHoscode(hoscode);
+//        this.setHospitalInfo(hospital);
+//        result.put("hospital", hospital);
+//        //预约规则
+//        result.put("bookingRule", hospital.getBookingRule());
+//        //不需要重复返回
+//        hospital.setBookingRule(null);
+//        return result;
+
         Map<String, Object> result = new HashMap<>();
-        //医院详情
-        Hospital hospital = hospitalService.getByHoscode(hoscode);
-        this.setHospitalInfo(hospital);
+
+        Hospital2 hospital = baseMapper.selectById(id);
         result.put("hospital", hospital);
-        //预约规则
-        result.put("bookingRule", hospital.getBookingRule());
-        //不需要重复返回
-        hospital.setBookingRule(null);
+        if (hospital != null) {
+            List<BookingRule2> bookingRuleList = bookingRuleService.listByHospitalId(hospital.getId());
+            result.put("bookingRule", bookingRuleList);
+        }
         return result;
     }
 
-    private void setHospitalInfo(Hospital hospital) {
-        String hospitalType = dictFeignClient.getName("Hostype", hospital.getHostype());
-        String province = dictFeignClient.getName(hospital.getProvinceCode());
-        String city = dictFeignClient.getName(hospital.getCityCode());
-        String district = dictFeignClient.getName(hospital.getDistrictCode());
+
+    private void setHospitalInfo(Hospital2 hospital) {
+        String hospitalType = dictFeignClient.getName("Hostype", hospital.getHostype().toString());
+        String province = dictFeignClient.getName(hospital.getProvinceCode().toString());
+        String city = dictFeignClient.getName(hospital.getCityCode().toString());
+        String district = dictFeignClient.getName(hospital.getDistrictCode().toString());
 
         if (hospital.getParam() == null) {
             hospital.setParam(new HashMap<>());

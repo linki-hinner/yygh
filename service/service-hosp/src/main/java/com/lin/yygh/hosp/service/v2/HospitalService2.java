@@ -1,27 +1,23 @@
 package com.lin.yygh.hosp.service.v2;
 
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.lin.yygh.model.hosp.Hospital;
 import com.lin.yygh.model.hosp.v2.Hospital2;
 import com.lin.yygh.vo.hosp.HospitalQueryVo;
-import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Map;
 
-public interface HospitalService2 {
-    void save(Map<String, Object> paramMap);
+public interface HospitalService2 extends IService<Hospital2> {
+    Map<String, Object> selectHospPage(Integer page, Integer limit, HospitalQueryVo hospitalQueryVo);
 
-    Hospital2 getByHoscode(String hoscode);
+    boolean updateStatus(Long id, Integer status);
 
-    Page<Hospital> selectHospPage(Integer page, Integer limit, HospitalQueryVo hospitalQueryVo);
+    public Hospital2 show(Long id) ;
 
-    boolean updateStatus(String id, Integer status);
-
-    Hospital show(String id);
-
-    String getHospName(String hoscode);
+    public String getHospName(Long id);
 
     List<Hospital> findByHosname(String hosname);
 
-    Map<String, ?> item(String hoscode);
+    Map<String, ?> item(Long id);
 }

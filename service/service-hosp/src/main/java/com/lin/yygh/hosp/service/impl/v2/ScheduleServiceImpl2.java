@@ -1,17 +1,22 @@
-package com.lin.yygh.hosp.service.impl;
+package com.lin.yygh.hosp.service.impl.v2;
 
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lin.yygh.common.exception.YyghException;
 import com.lin.yygh.common.result.ResultCodeEnum;
-import com.lin.yygh.hosp.repository.ScheduleRepository;
-import com.lin.yygh.hosp.service.DepartmentService;
-import com.lin.yygh.hosp.service.HospitalService;
-import com.lin.yygh.hosp.service.ScheduleService;
+import com.lin.yygh.hosp.mapper.ScheduleMapper;
+import com.lin.yygh.hosp.service.v2.BookingRuleService;
+import com.lin.yygh.hosp.service.v2.DepartmentService2;
+import com.lin.yygh.hosp.service.v2.HospitalService2;
+import com.lin.yygh.hosp.service.v2.ScheduleService2;
 import com.lin.yygh.model.hosp.BookingRule;
 import com.lin.yygh.model.hosp.Department;
 import com.lin.yygh.model.hosp.Hospital;
 import com.lin.yygh.model.hosp.Schedule;
+import com.lin.yygh.model.hosp.v2.BookingRule2;
+import com.lin.yygh.model.hosp.v2.Hospital2;
+import com.lin.yygh.model.hosp.v2.Schedule2;
+import com.lin.yygh.vo.base.PageVo;
 import com.lin.yygh.vo.hosp.BookingScheduleRuleVo;
 import com.lin.yygh.vo.hosp.ScheduleOrderVo;
 import com.lin.yygh.vo.hosp.ScheduleQueryVo;
@@ -19,8 +24,6 @@ import lombok.RequiredArgsConstructor;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.format.DateTimeFormat;
-import org.springframework.data.domain.*;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -32,65 +35,67 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ScheduleServiceImpl implements ScheduleService {
-    private final ScheduleRepository scheduleRepository;
-    private final MongoTemplate mongoTemplate;
-    private final HospitalService hospitalService;
-    private final DepartmentService departmentService;
+public class ScheduleServiceImpl2 extends ServiceImpl<ScheduleMapper, Schedule2> implements ScheduleService2 {
+    private final HospitalService2 hospitalService;
+    private final DepartmentService2 departmentService2;
+    private final BookingRuleService bookingRuleService;
 
     @Override
-    public void save(Map<String, Object> paramMap) {
-        String jsonString = JSONObject.toJSONString(paramMap);
-        Schedule schedule = JSONObject.parseObject(jsonString, Schedule.class);
+    public PageVo<Schedule2> findPageSchedule(ScheduleQueryVo scheduleQueryVo) {
+        List<Schedule2> hospital2List = baseMapper.listByScheduleQueryVo(scheduleQueryVo);
+        long total = baseMapper.countByScheduleQueryVo(scheduleQueryVo);
+        PageVo<Schedule2> page = new PageVo<>();
+        page.setData(hospital2List);
+        page.setTotal(total);
+        return page;
+    }
 
-        Schedule scheduleDO = scheduleRepository.getScheduleByHoscodeAndHosScheduleId(schedule.getHoscode(), schedule.getHosScheduleId());
-        if (scheduleDO == null) {
-            schedule.setCreateTime(new Date());
+    @Override
+    public List<Schedule2> getDetailSchedule(Long hospitalId, Long departmentId, Date workDate) {
+        ScheduleQueryVo scheduleOrderVo = new ScheduleQueryVo();
+        scheduleOrderVo.setHospitalId(hospitalId);
+        scheduleOrderVo.setDepartmentId(departmentId);
+        scheduleOrderVo.setWorkDate(workDate);
+        List<Schedule2> schedule2List = baseMapper.listByScheduleQueryVo(scheduleOrderVo);
+
+        schedule2List.forEach(this::packageSchedule);
+        return schedule2List;
+    }
+
+    @Override
+    public Map<String, Object> getRuleSchedule(long page, long limit, Long hospitalId, Long departmentId) {
+        List<BookingScheduleRuleVo> bookingScheduleRuleVoList =
+                baseMapper.ListBookingScheduleRuleVo(page, limit, hospitalId, departmentId);
+        Long total =
+                baseMapper.countBookingScheduleRuleVo(page, limit, hospitalId, departmentId);
+
+        //把日期对应星期获取
+        for (BookingScheduleRuleVo bookingScheduleRuleVo : bookingScheduleRuleVoList) {
+            Date workDate = bookingScheduleRuleVo.getWorkDate();
+            String dayOfWeek = this.getDayOfWeek(new DateTime(workDate));
+            bookingScheduleRuleVo.setDayOfWeek(dayOfWeek);
         }
-        schedule.setUpdateTime(new Date());
-        schedule.setIsDeleted(0);
-        schedule.setStatus(1);
-        scheduleRepository.save(schedule);
-    }
 
-    @Override
-    public Page<Schedule> findPageSchedule(Integer page, Integer limit, ScheduleQueryVo scheduleQueryVo) {
-        Pageable pageable = PageRequest.of(page - 1, limit);
+        //设置最终数据，进行返回
+        Map<String, Object> result = new HashMap<>();
+        result.put("bookingScheduleRuleList", bookingScheduleRuleVoList);
+        result.put("total", total);
 
-        ExampleMatcher matcher = ExampleMatcher.matching()
-                .withStringMatcher(ExampleMatcher.StringMatcher.CONTAINING)
-                .withIgnoreCase(true);
+        //获取医院名称
+        String hosName = hospitalService.getHospName(hospitalId);
+        //其他基础数据
+        Map<String, String> baseMap = new HashMap<>();
+        baseMap.put("hosname", hosName);
+        result.put("baseMap", baseMap);
 
-
-        Schedule schedule = new Schedule();
-        schedule.setHoscode(scheduleQueryVo.getHoscode());
-        schedule.setDepcode(scheduleQueryVo.getDepcode());
-        schedule.setIsDeleted(0);
-
-        Example<Schedule> example = Example.of(schedule, matcher);
-
-        return scheduleRepository.findAll(example, pageable);
-    }
-
-    @Override
-    public void remove(String hosCode, String hosScheduleId) {
-        Schedule schedule = scheduleRepository.getScheduleByHoscodeAndHosScheduleId(hosCode, hosScheduleId);
-        if (schedule != null) {
-            scheduleRepository.deleteById(schedule.getId());
-        }
-    }
-
-    @Override
-    public List<Schedule> getDetailSchedule(String hoscode, String depcode, String workDate) {
-        List<Schedule> schedule
-                = scheduleRepository.findSchedulesByHoscodeAndDepcodeAndWorkDate(hoscode, depcode, new DateTime(workDate).toDate());
-
-        schedule.forEach(this::packageSchedule);
-        return schedule;
+        return result;
     }
 
     @Override
     public Map<String, Object> getBookingScheduleRule(Integer page, Integer limit, String hoscode, String depcode) {
+
+
+
         Map<String, Object> result = new HashMap<>();
 
         //获取预约规则
@@ -184,36 +189,20 @@ public class ScheduleServiceImpl implements ScheduleService {
         return result;
     }
 
-    @Override
-    public Schedule getById(String scheduleId) {
-        Schedule schedule = scheduleRepository.findById(scheduleId).get();
-        this.packageSchedule(schedule);
-        return schedule;
-    }
 
     @Override
-    public ScheduleOrderVo getScheduleOrderVo(String scheduleId) {
+    public ScheduleOrderVo getScheduleOrderVo(Long scheduleId) {
         ScheduleOrderVo scheduleOrderVo = new ScheduleOrderVo();
         //排班信息
-        Schedule schedule = scheduleRepository.findById(scheduleId).orElseGet(()->null);
-        if(null == schedule) {
-            throw new YyghException(ResultCodeEnum.PARAM_ERROR);
-        }
+        Schedule2 schedule = baseMapper.selectById(scheduleId);
 
         //获取预约规则信息
-        Hospital hospital = hospitalService.getByHoscode(schedule.getHoscode());
-        if(null == hospital) {
-            throw new YyghException(ResultCodeEnum.DATA_ERROR);
-        }
-        BookingRule bookingRule = hospital.getBookingRule();
-        if(null == bookingRule) {
-            throw new YyghException(ResultCodeEnum.PARAM_ERROR);
-        }
+        Hospital2 hospital = hospitalService.getById(schedule.getHospitalId());
+        List<BookingRule2> bookingRule2List = bookingRuleService.listByHospitalId(schedule.getHospitalId());
 
-        scheduleOrderVo.setHoscode(schedule.getHoscode());
-        scheduleOrderVo.setHosname(hospitalService.getHospName(schedule.getHoscode()));
-        scheduleOrderVo.setDepcode(schedule.getDepcode());
-        scheduleOrderVo.setDepname(departmentService.getDepName(schedule.getHoscode(), schedule.getDepcode()));
+        scheduleOrderVo.setHosname(hospitalService.getHospName(schedule.getHospitalId()));
+        scheduleOrderVo.setDepcode(schedule.getDepartmentId().toString());
+        scheduleOrderVo.setDepname(departmentService2.getDepName(schedule.getDepartmentId()));
         scheduleOrderVo.setHosScheduleId(schedule.getHosScheduleId());
         scheduleOrderVo.setAvailableNumber(schedule.getAvailableNumber());
         scheduleOrderVo.setTitle(schedule.getTitle());
@@ -222,29 +211,19 @@ public class ScheduleServiceImpl implements ScheduleService {
         scheduleOrderVo.setAmount(schedule.getAmount());
 
         //退号截止天数（如：就诊前一天为-1，当天为0）
-        int quitDay = bookingRule.getQuitDay();
-        DateTime quitTime = this.getDateTime(new DateTime(schedule.getWorkDate()).plusDays(quitDay).toDate(), bookingRule.getQuitTime());
+        int quitDay = bookingRule2List.get(0).getQuitDay();
+        DateTime quitTime = this.getDateTime(new DateTime(schedule.getWorkDate()).plusDays(quitDay).toDate(), bookingRule2List.get(0).getQuitTime());
         scheduleOrderVo.setQuitTime(quitTime.toDate());
 
         //预约开始时间
-        DateTime startTime = this.getDateTime(new Date(), bookingRule.getReleaseTime());
+        DateTime startTime = this.getDateTime(new Date(), bookingRule2List.get(0).getReleaseTime());
         scheduleOrderVo.setStartTime(startTime.toDate());
 
         //预约截止时间
-        DateTime endTime = this.getDateTime(new DateTime().plusDays(bookingRule.getCycle()).toDate(), bookingRule.getStopTime());
+        DateTime endTime = this.getDateTime(new DateTime().plusDays(bookingRule2List.get(0).getCycle()).toDate(), bookingRule2List.get(0).getStopTime());
         scheduleOrderVo.setEndTime(endTime.toDate());
 
-        //当天停止挂号时间
-        DateTime stopTime = this.getDateTime(new Date(), bookingRule.getStopTime());
-        scheduleOrderVo.setStartTime(startTime.toDate());
         return scheduleOrderVo;
-    }
-
-    @Override
-    public void update(Schedule schedule) {
-        schedule.setUpdateTime(new Date());
-        //主键一致就是更新
-        scheduleRepository.save(schedule);
     }
 
     /**
@@ -287,10 +266,10 @@ public class ScheduleServiceImpl implements ScheduleService {
         return iPage;
     }
 
-    private void packageSchedule(Schedule schedule) {
+    private void packageSchedule(Schedule2 schedule) {
         Map<String, Object> param = schedule.getParam();
-        param.put("hosname", hospitalService.getHospName(schedule.getHoscode()));
-        param.put("depname", departmentService.getDepName(schedule.getHoscode(), schedule.getDepcode()));
+        param.put("hosname", hospitalService.getHospName(schedule.getHospitalId()));
+        param.put("depname", departmentService2.getDepName(schedule.getDepartmentId()));
         param.put("dayOfWeek", this.getDayOfWeek(new DateTime(schedule.getWorkDate())));
     }
 
